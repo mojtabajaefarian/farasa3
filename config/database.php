@@ -2,7 +2,7 @@
 class Database
 {
        private $host = 'localhost';
-       private $db_name = 'product_management';
+       private $db_name = 'farasa3';
        private $username = 'root';
        private $password = '';
        public $conn;

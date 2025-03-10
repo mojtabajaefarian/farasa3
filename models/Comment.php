@@ -876,6 +876,23 @@ $whereClause";
               exit();
        }
 
+
+
+
+
+       function numToAlpha($n)
+       {
+              $n--;
+              for ($r = ""; $n >= 0; $n = intval($n / 26) - 1)
+                     $r = chr($n % 26 + 0x41) . $r;
+              return $r;
+       }
+
+
+
+
+
+
        // Export comments to Excel (requires PhpSpreadsheet library)
        private function exportToExcel($comments)
        {
@@ -900,10 +917,13 @@ $whereClause";
               ];
 
               // Write headers
-              foreach ($headers as $col => $header) {
+              /*    foreach ($headers as $col => $header) {
                      $sheet->setCellValue($col + 1, 1, $header);
+              }*/
+              foreach ($headers as $col => $header) {
+                     $cell = numToAlpha($col + 1) . '1'; // تبدیل عدد ستون به نام ستون و ترکیب با شماره ردیف
+                     $sheet->setCellValue($cell, $header);
               }
-
               // Write comment data
               foreach ($comments as $row => $comment) {
                      $sheet->setCellValue('A' . ($row + 2), $comment['id']);
@@ -1238,5 +1258,113 @@ $whereClause";
        {
               // Implement spelling error check logic here
               return rand(0, 5); // Example: return a random number of spelling errors
+       }
+       // Check language quality and writing style
+       private function checkLanguageQuality($text)
+       {
+              $languageChecks = [
+                     'grammar_complexity' => $this->checkGrammarComplexity($text),
+                     'coherence' => $this->checkCoherence($text),
+                     'vocabulary_richness' => $this->measureVocabularyRichness($text),
+                     'sentence_structure' => $this->analyzeSentenceStructure($text)
+              ];
+
+              // Calculate overall language quality score
+              $score = 0;
+              foreach ($languageChecks as $check) {
+                     $score += $check['score'];
+              }
+
+              return [
+                     'language_checks' => $languageChecks,
+                     'score' => $score / count($languageChecks),
+                     'overall_quality' => $this->interpretLanguageQuality($score)
+              ];
+       }
+
+       // Check grammar complexity
+       private function checkGrammarComplexity($text)
+       {
+              $complexityMetrics = [
+                     'clause_count' => $this->countClauses($text),
+                     'verb_variety' => $this->measureVerbVariety($text),
+                     'punctuation_usage' => $this->analyzePunctuationUsage($text)
+              ];
+
+              $complexityScore = 0;
+              foreach ($complexityMetrics as $metric => $value) {
+                     $complexityScore += $value;
+              }
+
+              return [
+                     'complexity_metrics' => $complexityMetrics,
+                     'score' => $complexityScore / count($complexityMetrics)
+              ];
+       }
+
+       // Count clauses in text
+       private function countClauses($text)
+       {
+              // Simple clause counting using regex
+              $clausePatterns = [
+                     '/\bو\b/',           // Persian conjunctions
+                     '/\bکه\b/',           // Persian relative clause marker
+                     '/\bاما\b/',          // Persian 'but'
+                     '/,/',                // Comma as clause separator
+                     '/؛/'                 // Persian semicolon
+              ];
+
+              $clauseCount = 1;  // Start with base clause
+              foreach ($clausePatterns as $pattern) {
+                     $clauseCount += preg_match_all($pattern, $text);
+              }
+
+              return min($clauseCount, 10);  // Cap at 10 for scoring
+       }
+
+       // Measure verb variety
+       private function measureVerbVariety($text)
+       {
+              // Extract unique verbs using simple regex
+              preg_match_all('/\b(می\s?[^\s]+|[^\s]+\s?کردن|[^\s]+\s?شدن)\b/u', $text, $matches);
+
+              $uniqueVerbs = array_unique($matches[0]);
+              $verbVarietyScore = count($uniqueVerbs) / 10;  // Normalize score
+
+              return min($verbVarietyScore, 1);
+       }
+
+       // Analyze punctuation usage
+       private function analyzePunctuationUsage($text)
+       {
+              $punctuationTypes = [
+                     'periods' => substr_count($text, '.'),
+                     'commas' => substr_count($text, ','),
+                     'semicolons' => substr_count($text, '؛'),
+                     'question_marks' => substr_count($text, '؟')
+              ];
+
+              $punctuationScore = 0;
+              foreach ($punctuationTypes as $type => $count) {
+                     $punctuationScore += ($count > 0 ? 0.25 : 0);
+              }
+
+              return $punctuationScore;
+       }
+
+       // Check text coherence
+       private function checkCoherence($text)
+       {
+              $coherenceMetrics = [
+                     'transition_words' => $this->checkTransitionWords($text),
+                     'logical_flow' => $this->assessLogicalFlow($text)
+              ];
+
+              $coherenceScore = array_sum($coherenceMetrics) / count($coherenceMetrics);
+
+              return [
+                     'coherence_metrics' => $coherenceMetrics,
+                     'score' => $coherenceScore
+              ];
        }
 }
